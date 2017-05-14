@@ -7,14 +7,22 @@ import (
 )
 
 func encodeResponse(statusCode int, obj interface{}, w http.ResponseWriter, r *http.Request) {
-	res, err := json.Marshal(obj)
-
 	w.Header().Set("Content-Type", "application/json")
+
+	// If no object provided to encode, just return the status code
+	if obj == nil {
+		w.WriteHeader(statusCode)
+		return
+	}
+
+	// Attempt to encode the object
+	res, err := json.Marshal(obj)
 
 	// If no errors, Just write the response
 	if err == nil {
 		w.WriteHeader(statusCode)
 		w.Write([]byte(res))
+		return
 	}
 
 	// If theres an error write the error out

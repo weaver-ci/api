@@ -15,8 +15,11 @@ const (
 	assemblaClientSecretKey = "ASSEMBLA_CLIENT_SECRET"
 	gitHubClientIDKey       = "GITHUB_CLIENT_ID"
 	gitHubClientSecretKey   = "GITHUB_CLIENT_SECRET"
+
+	oAuthSessionString = "ThisIsARandomKey"
 )
 
+// Environment Variable Settings
 var (
 	// Assembla OAuth Configuration
 	assemblaClientID     = os.Getenv(assemblaClientIDKey)
@@ -26,13 +29,12 @@ var (
 	gitHubClientID     = os.Getenv(gitHubClientIDKey)
 	gitHubClientSecret = os.Getenv(gitHubClientSecretKey)
 
+	// General
 	environment = os.Getenv("GO_ENV")
-
-	oAuthSessionString = "ThisIsARandomKey"
 )
 
 func main() {
-	// Validate Properties
+	// Global Environment Variables
 	if gitHubClientID == "" || gitHubClientSecret == "" {
 		panic(fmt.Sprintf("%v or %s cannot be empty", gitHubClientIDKey, gitHubClientSecretKey))
 	}
@@ -45,12 +47,26 @@ func main() {
 		environment = "production"
 	}
 
+	// Database
+	connectionString := os.Getenv("DB_CONNECTION_STRING")
+
+	if len(connectionString) == 0 {
+		panic(fmt.Sprintf("%v cannot be empty", connectionString))
+	}
+
+	InitializeDatabase(connectionString)
+
 	// Here we are instantiating the gorilla/mux router
 	r := mux.NewRouter()
 
 	// Routes
+	// Login
 	r.Handle("/login/{provider}", Login).Methods("GET")
 	r.Handle("/login/{provider}/callback", LoginCallback).Methods("GET")
+
+	//Users
+	r.Handle("/users", UsersController).Methods("GET")
+	r.Handle("/users/{userID}", UserController).Methods("GET")
 
 	// Our application will run on port 3000. Here we declare the port and pass in our router.
 	http.ListenAndServe(":3000", handlers.LoggingHandler(os.Stdout, r))
